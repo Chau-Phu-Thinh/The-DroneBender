@@ -1,6 +1,1 @@
 """BungeeGum — Real-time hand tracking with multi-output support."""
-
-from bungeegum.app import run
-
-if __name__ == "__main__":
-    run()
