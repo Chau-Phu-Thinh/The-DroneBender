@@ -33,7 +33,8 @@ wsReceiver.onStatusChange = (connected) => {
 
 wsReceiver.onHandTarget = (data) => {
   if (data.isFist) {
-    // Closed Fist -> Lock position / Hover in place
+    // Closed Fist -> Lock position & orientation / Hover in place completely fixed
+    flightController.applyYawRate(0);
     flightController.setHoverLock(true);
   } else {
     // Open Hand -> Full 3D Flight & Yaw Steering
@@ -45,6 +46,7 @@ wsReceiver.onHandTarget = (data) => {
 
 wsReceiver.onGesture = (gesture) => {
   if (gesture.name === 'fist') {
+    flightController.applyYawRate(0);
     flightController.setHoverLock(true);
   }
 };

@@ -17,7 +17,7 @@
  * │              │ (Tilt CW = Yaw Right, Tilt CCW = Yaw Left)       │
  * ├──────────────┼───────────────────────────────────────────────────┤
  * │ HOVER LOCK   │ Closed Fist (Nắm bàn tay lại)                    │
- * │              │ Freeze drone position & stabilize                │
+ * │              │ Freeze position & rotation completely            │
  * └──────────────┴───────────────────────────────────────────────────┘
  */
 
@@ -106,7 +106,6 @@ export class WSReceiver {
         // ════════════════════════════════════════════════════════
         // 1) CLOSED FIST DETECTION (NẮM BÀN TAY LẠI)
         // ════════════════════════════════════════════════════════
-        // Check if fingertips are curled close to wrist / MCPs
         let closedCount = 0;
         if (dist2D(indexTip, wrist) < dist2D(indexPip, wrist) * 1.15) closedCount++;
         if (dist2D(middleTip, wrist) < dist2D(middlePip, wrist) * 1.15) closedCount++;
@@ -124,33 +123,31 @@ export class WSReceiver {
         // ════════════════════════════════════════════════════════
         // 3) UP / DOWN (Altitude Y) — Wrist Y screen position
         // ════════════════════════════════════════════════════════
-        // High hand on screen = High altitude, Low hand = Descend
         const rawY = mapRange(wrist[1], 0.85, 0.15, 0.4, 6.0);
 
         // ════════════════════════════════════════════════════════
         // 4) FORWARD / BACKWARD (Z) — Hand Depth + Palm Size
         // ════════════════════════════════════════════════════════
-        // Measure palm span (wrist to middle MCP base)
         const palmSize = dist2D(wrist, middleMcp);
-        // Also combine with index-wrist delta
         const rawZ = mapRange(palmSize, 0.12, 0.38, 4.5, -5.0);
 
         // ════════════════════════════════════════════════════════
         // 5) YAW ROTATION — Hand Roll Angle (Nghiêng bàn tay)
         // ════════════════════════════════════════════════════════
-        // Angle between index MCP and pinky MCP
-        const rollDx = pinkyMcp[0] - indexMcp[0];
-        const rollDy = pinkyMcp[1] - indexMcp[1];
-        let rollAngle = Math.atan2(rollDy, rollDx);
-
-        if (hand.handedness === 'Left') rollAngle = -rollAngle;
-
-        const DEADZONE = 0.15; // ~8.5 degrees deadzone
         let yawRate = 0;
-        if (Math.abs(rollAngle) > DEADZONE) {
-          const sign = rollAngle > 0 ? 1 : -1;
-          const mag = Math.abs(rollAngle) - DEADZONE;
-          yawRate = sign * mapRange(mag, 0, 0.7, 0, 2.8);
+        if (!isFist) {
+          const rollDx = pinkyMcp[0] - indexMcp[0];
+          const rollDy = pinkyMcp[1] - indexMcp[1];
+          let rollAngle = Math.atan2(rollDy, rollDx);
+
+          if (hand.handedness === 'Left') rollAngle = -rollAngle;
+
+          const DEADZONE = 0.15; // ~8.5 degrees deadzone
+          if (Math.abs(rollAngle) > DEADZONE) {
+            const sign = rollAngle > 0 ? 1 : -1;
+            const mag = Math.abs(rollAngle) - DEADZONE;
+            yawRate = sign * mapRange(mag, 0, 0.7, 0, 2.8);
+          }
         }
 
         // Apply EMA smoothing
@@ -159,16 +156,16 @@ export class WSReceiver {
         this._sx = lerp(this._sx, rawX, a);
         this._sy = lerp(this._sy, rawY, a);
         this._sz = lerp(this._sz, rawZ, a);
-        this._sYaw = lerp(this._sYaw, yawRate, aY);
+        this._sYaw = isFist ? 0 : lerp(this._sYaw, yawRate, aY);
 
         if (this.onHandTarget) {
           this.onHandTarget({
             x: this._sx,
             y: this._sy,
             z: this._sz,
-            yawRate: this._sYaw,
+            yawRate: isFist ? 0 : this._sYaw,
             isFist,
-            isPinching: isFist, // alias for backward compatibility
+            isPinching: isFist,
             handedness: hand.handedness,
             confidence: hand.confidence,
           });

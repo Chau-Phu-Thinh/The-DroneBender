@@ -14,6 +14,7 @@ export class FlightController {
     this.isArmed = true;
     this.isHoverLocked = false;
     this.hoverLockPos = new THREE.Vector3(0, 1.5, 0);
+    this.hoverLockYaw = 0;
 
     // Kinematics State
     this.position = new THREE.Vector3(0, 1.5, 0);
@@ -64,10 +65,14 @@ export class FlightController {
 
   setHoverLock(locked) {
     if (locked && !this.isHoverLocked) {
-      // Just entered lock: save current position
+      // Just entered lock: freeze current position & orientation
       this.hoverLockPos.copy(this.position);
+      this.hoverLockYaw = this.yaw;
     }
     this.isHoverLocked = locked;
+    if (locked) {
+      this.targetYawRate = 0;
+    }
   }
 
   setTargetPosition(x, y, z) {
@@ -81,7 +86,11 @@ export class FlightController {
   }
 
   applyYawRate(rate) {
-    this.targetYawRate = rate;
+    if (!this.isHoverLocked) {
+      this.targetYawRate = rate;
+    } else {
+      this.targetYawRate = 0;
+    }
   }
 
   setRCInput(pitch, roll, yawRate, throttle) {
@@ -96,6 +105,7 @@ export class FlightController {
     this.velocity.set(0, 0, 0);
     this.targetPosition.set(0, 1.5, 0);
     this.hoverLockPos.set(0, 1.5, 0);
+    this.hoverLockYaw = 0;
     this.isHoverLocked = false;
     this.pitch = 0;
     this.roll = 0;
@@ -142,12 +152,18 @@ export class FlightController {
   }
 
   updateFingerTracking(delta) {
-    // 1. Update Yaw from hand tilt roll angle
-    if (this.targetYawRate !== 0) {
-      this.yaw += this.targetYawRate * delta;
+    // 1. Update Yaw from hand tilt roll angle ONLY when NOT hover locked
+    if (!this.isHoverLocked) {
+      if (this.targetYawRate !== 0) {
+        this.yaw += this.targetYawRate * delta;
+      }
+    } else {
+      // Strictly fix and hold the yaw heading when locked
+      this.targetYawRate = 0;
+      this.yaw = this.hoverLockYaw;
     }
 
-    // 2. Target following or Hover lock
+    // 2. Target following or Hover lock position
     const target = this.isHoverLocked ? this.hoverLockPos : this.targetPosition;
     const error = new THREE.Vector3().subVectors(target, this.position);
 
@@ -161,26 +177,32 @@ export class FlightController {
     this.position.addScaledVector(this.velocity, delta);
 
     // 4. Dynamic Banking / Tilt based on velocity transformed into local drone coordinate system
-    const localVelX = this.velocity.x * Math.cos(-this.yaw) - this.velocity.z * Math.sin(-this.yaw);
-    const localVelZ = this.velocity.x * Math.sin(-this.yaw) + this.velocity.z * Math.cos(-this.yaw);
+    if (this.isHoverLocked) {
+      // Smoothly level out drone to completely horizontal
+      this.pitch = THREE.MathUtils.lerp(this.pitch, 0, delta * this.tiltResponse);
+      this.roll = THREE.MathUtils.lerp(this.roll, 0, delta * this.tiltResponse);
+    } else {
+      const localVelX = this.velocity.x * Math.cos(-this.yaw) - this.velocity.z * Math.sin(-this.yaw);
+      const localVelZ = this.velocity.x * Math.sin(-this.yaw) + this.velocity.z * Math.cos(-this.yaw);
 
-    // Pitch tilts forward when moving forward (local -Z)
-    const targetPitch = THREE.MathUtils.clamp(
-      (localVelZ / this.maxSpeed) * this.maxTilt,
-      -this.maxTilt,
-      this.maxTilt
-    );
+      // Pitch tilts forward when moving forward (local -Z)
+      const targetPitch = THREE.MathUtils.clamp(
+        (localVelZ / this.maxSpeed) * this.maxTilt,
+        -this.maxTilt,
+        this.maxTilt
+      );
 
-    // Roll tilts sideways when moving lateral (local X)
-    const targetRoll = THREE.MathUtils.clamp(
-      (-localVelX / this.maxSpeed) * this.maxTilt,
-      -this.maxTilt,
-      this.maxTilt
-    );
+      // Roll tilts sideways when moving lateral (local X)
+      const targetRoll = THREE.MathUtils.clamp(
+        (-localVelX / this.maxSpeed) * this.maxTilt,
+        -this.maxTilt,
+        this.maxTilt
+      );
 
-    // Smooth tilt transitions
-    this.pitch = THREE.MathUtils.lerp(this.pitch, targetPitch, delta * this.tiltResponse);
-    this.roll = THREE.MathUtils.lerp(this.roll, targetRoll, delta * this.tiltResponse);
+      // Smooth tilt transitions
+      this.pitch = THREE.MathUtils.lerp(this.pitch, targetPitch, delta * this.tiltResponse);
+      this.roll = THREE.MathUtils.lerp(this.roll, targetRoll, delta * this.tiltResponse);
+    }
   }
 
   updateManualRC(delta) {
