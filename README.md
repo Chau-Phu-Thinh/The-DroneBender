@@ -7,3 +7,7 @@ Control 3D Drone simulation and real drones using finger tracking and hand gestu
 1. **Python Tracking Layer**: MediaPipe Hand Landmark Tracking + Gesture Recognition + WebSocket Broadcaster.
 2. **Web 3D Simulation Layer**: Three.js + Blender 3D Drone Model + Flight Dynamics / PID Controller.
 3. **Hardware Bridge (Upcoming)**: MAVLink / ESP32 / Drone SDK.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
