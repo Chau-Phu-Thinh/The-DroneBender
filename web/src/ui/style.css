@@ -6,7 +6,7 @@
   --text-dim: #6b6b6b;
   --accent: #2d2d2d;
   --border: #d4cfc7;
-  --panel-bg: rgba(250, 247, 240, 0.85);
+  --panel-bg: rgba(250, 247, 240, 0.88);
   --status-online: #2d5016;
   --status-online-bg: rgba(45, 80, 22, 0.1);
   --status-offline: #8b1a1a;
@@ -118,6 +118,7 @@ html, body {
 .top-controls {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .hud-btn {
@@ -148,13 +149,25 @@ html, body {
   border-color: var(--accent);
 }
 
+.hud-btn.btn-webcam {
+  background: var(--status-online-bg);
+  border-color: var(--status-online);
+  color: var(--status-online);
+}
+
+.hud-btn.btn-webcam.active {
+  background: var(--status-online);
+  color: #fff;
+  border-color: var(--status-online);
+}
+
 /* Top right guide panel */
 .guide-panel {
   background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 14px 18px;
-  max-width: 280px;
+  max-width: 290px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
@@ -278,6 +291,46 @@ html, body {
   letter-spacing: 0.5px;
 }
 
+/* Camera Preview PiP Window */
+#camera-preview-container {
+  position: absolute;
+  bottom: 180px;
+  left: 20px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 20;
+}
+
+#camera-preview-container.visible {
+  display: flex;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+#camera-preview-canvas {
+  width: 180px;
+  height: 135px;
+  border-radius: 4px;
+  background: #e8e3db;
+  border: 1px solid var(--border);
+  display: block;
+}
+
 /* Bottom telemetry */
 .hud-bottom {
   display: grid;
@@ -339,21 +392,6 @@ html, body {
   font-weight: 400;
 }
 
-/* Help Card */
-.help-card {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-
-.help-card p {
-  margin-bottom: 6px;
-}
-
-.help-card strong {
-  color: var(--text-ink);
-}
-
 /* Model dropzone */
 .model-dropzone {
   display: block;
@@ -381,5 +419,11 @@ html, body {
 
   .hud-bottom {
     grid-template-columns: 1fr;
+  }
+
+  #camera-preview-container {
+    bottom: auto;
+    top: 70px;
+    left: 20px;
   }
 }

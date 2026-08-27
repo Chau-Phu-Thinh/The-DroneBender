@@ -100,6 +100,15 @@
         <span id="target-coords">TARGET: (0.0, 1.5, 0.0)</span>
       </div>
 
+      <!-- Camera Preview PiP Window -->
+      <div id="camera-preview-container" class="hud-interactive">
+        <div class="preview-header">
+          <span>📷 Camera Tracking</span>
+          <button id="btn-close-preview" title="Ẩn khung hình">✕</button>
+        </div>
+        <canvas id="camera-preview-canvas" width="320" height="240"></canvas>
+      </div>
+
       <!-- Bottom: Controls + Telemetry -->
       <footer class="hud-bottom">
         <!-- Telemetry Left: Flight Data -->
@@ -129,6 +138,9 @@
 
           <!-- Action buttons row -->
           <div class="top-controls hud-interactive" style="margin-top: 12px;">
+            <button id="btn-webcam-toggle" class="hud-btn btn-webcam">
+              <span>📷 Bật Webcam Web</span>
+            </button>
             <button id="btn-mode-toggle" class="hud-btn active">
               <span>Finger Tracking</span>
             </button>
@@ -153,16 +165,16 @@
               <span class="metric-val" id="val-hands">No Hand</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Độ trễ</span>
-              <span class="metric-val"><span id="val-ping">--</span><span class="metric-unit">ms</span></span>
+              <span class="metric-label">Nguồn Tracking</span>
+              <span class="metric-val" id="val-source" style="font-size: 0.85rem;">WebSocket</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Pin</span>
               <span class="metric-val"><span id="val-bat">98</span><span class="metric-unit">%</span></span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">WebSocket</span>
-              <span class="metric-val" id="val-ws" style="font-size: 0.85rem;">ws://8765</span>
+              <span class="metric-label">Trạng thái mạng</span>
+              <span class="metric-val" id="val-ws" style="font-size: 0.85rem;">Standby</span>
             </div>
           </div>
         </div>
