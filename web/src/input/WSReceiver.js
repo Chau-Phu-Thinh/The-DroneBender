@@ -13,8 +13,10 @@
  * │              │ (Push hand forward = Fly Forward)                │
  * │              │ (Pull hand back = Fly Backward)                  │
  * ├──────────────┼───────────────────────────────────────────────────┤
- * │ YAW ROTATE   │ Hand roll angle (Tilt hand left / right)         │
- * │              │ (Tilt CW = Yaw Right, Tilt CCW = Yaw Left)       │
+ * │ YAW ROTATE   │ Wrist-to-Middle MCP Tilt Angle (Nghiêng bàn tay) │
+ * │              │ (Tilt Right > 15° = Yaw Right)                   │
+ * │              │ (Tilt Left > 15° = Yaw Left)                     │
+ * │              │ (Straight ±15° = Zero Rotation, Rock Solid)      │
  * ├──────────────┼───────────────────────────────────────────────────┤
  * │ HOVER LOCK   │ Closed Fist (Nắm bàn tay lại)                    │
  * │              │ Freeze position & rotation completely            │
@@ -34,7 +36,7 @@ export class WSReceiver {
     this._sz = 0;
     this._sYaw = 0;
     this._alpha = 0.28;
-    this._alphaYaw = 0.22;
+    this._alphaYaw = 0.25;
 
     // Callbacks
     this.onStatusChange = null;
@@ -89,17 +91,13 @@ export class WSReceiver {
 
         // Key landmarks
         const wrist     = lms[0];
-        const thumbTip  = lms[4];
-        const indexMcp  = lms[5];
         const indexPip  = lms[6];
         const indexTip  = lms[8];
         const middleMcp = lms[9];
         const middlePip = lms[10];
         const middleTip = lms[12];
-        const ringMcp   = lms[13];
         const ringPip   = lms[14];
         const ringTip   = lms[16];
-        const pinkyMcp  = lms[17];
         const pinkyPip  = lms[18];
         const pinkyTip  = lms[20];
 
@@ -112,7 +110,7 @@ export class WSReceiver {
         if (dist2D(ringTip, wrist) < dist2D(ringPip, wrist) * 1.15) closedCount++;
         if (dist2D(pinkyTip, wrist) < dist2D(pinkyPip, wrist) * 1.15) closedCount++;
 
-        // Fist triggered if at least 3 fingers are closed
+        // Fist triggered if at least 3 fingers are curled in
         const isFist = closedCount >= 3;
 
         // ════════════════════════════════════════════════════════
@@ -123,6 +121,7 @@ export class WSReceiver {
         // ════════════════════════════════════════════════════════
         // 3) UP / DOWN (Altitude Y) — Wrist Y screen position
         // ════════════════════════════════════════════════════════
+        // High hand on screen = High altitude, Low hand = Descend
         const rawY = mapRange(wrist[1], 0.85, 0.15, 0.4, 6.0);
 
         // ════════════════════════════════════════════════════════
@@ -132,21 +131,23 @@ export class WSReceiver {
         const rawZ = mapRange(palmSize, 0.12, 0.38, 4.5, -5.0);
 
         // ════════════════════════════════════════════════════════
-        // 5) YAW ROTATION — Hand Roll Angle (Nghiêng bàn tay)
+        // 5) YAW ROTATION — Hand Tilt Angle (Cổ tay nghiêng)
         // ════════════════════════════════════════════════════════
-        let yawRate = 0;
+        let rawYawRate = 0;
         if (!isFist) {
-          const rollDx = pinkyMcp[0] - indexMcp[0];
-          const rollDy = pinkyMcp[1] - indexMcp[1];
-          let rollAngle = Math.atan2(rollDy, rollDx);
+          // Vector from Wrist to Middle MCP (points UP along the hand)
+          const dx = middleMcp[0] - wrist[0];
+          const dy = wrist[1] - middleMcp[1]; // dy > 0 when fingers point up
 
-          if (hand.handedness === 'Left') rollAngle = -rollAngle;
+          // Angle relative to straight vertical (0 rad = straight up)
+          const tiltAngle = Math.atan2(dx, dy);
 
-          const DEADZONE = 0.15; // ~8.5 degrees deadzone
-          if (Math.abs(rollAngle) > DEADZONE) {
-            const sign = rollAngle > 0 ? 1 : -1;
-            const mag = Math.abs(rollAngle) - DEADZONE;
-            yawRate = sign * mapRange(mag, 0, 0.7, 0, 2.8);
+          // Generous Deadzone: ±15 degrees (0.26 rad) to guarantee NO drift/spinning when upright
+          const DEADZONE = 0.26;
+          if (Math.abs(tiltAngle) > DEADZONE) {
+            const sign = tiltAngle > 0 ? 1 : -1;
+            const mag = Math.min(1.0, (Math.abs(tiltAngle) - DEADZONE) / 0.45);
+            rawYawRate = sign * mag * 2.2;
           }
         }
 
@@ -156,7 +157,13 @@ export class WSReceiver {
         this._sx = lerp(this._sx, rawX, a);
         this._sy = lerp(this._sy, rawY, a);
         this._sz = lerp(this._sz, rawZ, a);
-        this._sYaw = isFist ? 0 : lerp(this._sYaw, yawRate, aY);
+
+        // If within deadzone, snap yawRate straight to 0 without sluggish trailing
+        if (rawYawRate === 0) {
+          this._sYaw = 0;
+        } else {
+          this._sYaw = lerp(this._sYaw, rawYawRate, aY);
+        }
 
         if (this.onHandTarget) {
           this.onHandTarget({
