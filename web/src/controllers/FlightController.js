@@ -9,17 +9,21 @@ export class FlightController {
   constructor(droneEntity) {
     this.drone = droneEntity;
 
+    // Physics Constants & Gains
+    this.minAltitude = 0.06;   // Ground landing plane
+    this.maxAltitude = 12.0;
+
     // Mode
     this.mode = FlightMode.FINGER_TRACKING;
     this.isArmed = true;
     this.isHoverLocked = false;
-    this.hoverLockPos = new THREE.Vector3(0, 1.5, 0);
+    this.hoverLockPos = new THREE.Vector3(0, this.minAltitude, 0);
     this.hoverLockYaw = 0;
 
-    // Kinematics State
-    this.position = new THREE.Vector3(0, 1.5, 0);
+    // Kinematics State (Initial position resting on ground at center coordinates)
+    this.position = new THREE.Vector3(0, this.minAltitude, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
-    this.targetPosition = new THREE.Vector3(0, 1.5, 0);
+    this.targetPosition = new THREE.Vector3(0, this.minAltitude, 0);
 
     // Orientation State (Euler angles)
     this.pitch = 0; // X axis
@@ -35,13 +39,10 @@ export class FlightController {
       throttle: 0.5,
     };
 
-    // Physics Constants & Gains
     this.maxSpeed = 8.0;      // m/s
     this.maxTilt = 0.55;       // ~32 degrees max banking angle
     this.posLerpSpeed = 4.5;   // Spring response to finger
     this.tiltResponse = 8.0;   // How fast body tilts into movement
-    this.minAltitude = 0.06;   // Ground landing plane
-    this.maxAltitude = 12.0;
 
     // Initialize Drone position
     this.drone.setPosition(this.position);
@@ -101,10 +102,10 @@ export class FlightController {
   }
 
   reset() {
-    this.position.set(0, 1.5, 0);
+    this.position.set(0, this.minAltitude, 0);
     this.velocity.set(0, 0, 0);
-    this.targetPosition.set(0, 1.5, 0);
-    this.hoverLockPos.set(0, 1.5, 0);
+    this.targetPosition.set(0, this.minAltitude, 0);
+    this.hoverLockPos.set(0, this.minAltitude, 0);
     this.hoverLockYaw = 0;
     this.isHoverLocked = false;
     this.pitch = 0;
@@ -236,7 +237,7 @@ export class FlightController {
 
   getTelemetry() {
     return {
-      altitude: this.position.y,
+      altitude: Math.max(0, this.position.y - this.minAltitude),
       speed: this.velocity.length(),
       pitchDeg: (this.pitch * (180 / Math.PI)).toFixed(1),
       rollDeg: (this.roll * (180 / Math.PI)).toFixed(1),

@@ -26,7 +26,7 @@ export class WebCameraTracker {
 
     // Smoothed values
     this._sx = 0;
-    this._sy = 1.5;
+    this._sy = 0.06;
     this._sz = 0;
     this._sYaw = 0;
     this._alpha = 0.28;
@@ -182,7 +182,7 @@ export class WebCameraTracker {
     const pinkyPip  = lms[18];
     const pinkyTip  = lms[20];
 
-    // 1) CLOSED FIST DETECTION (NẮM BÀN TAY)
+    // 1) CLOSED FIST DETECTION
     let closedCount = 0;
     if (dist2D(indexTip, wrist) < dist2D(indexPip, wrist) * 1.15) closedCount++;
     if (dist2D(middleTip, wrist) < dist2D(middlePip, wrist) * 1.15) closedCount++;

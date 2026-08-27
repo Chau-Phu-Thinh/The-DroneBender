@@ -13,12 +13,12 @@
  * │              │ (Push hand forward = Fly Forward)                │
  * │              │ (Pull hand back = Fly Backward)                  │
  * ├──────────────┼───────────────────────────────────────────────────┤
- * │ YAW ROTATE   │ Wrist-to-Middle MCP Tilt Angle (Nghiêng bàn tay) │
+ * │ YAW ROTATE   │ Wrist-to-Middle MCP Tilt Angle (Hand tilt)        │
  * │              │ (Tilt Right > 15° = Yaw Right)                   │
  * │              │ (Tilt Left > 15° = Yaw Left)                     │
  * │              │ (Straight ±15° = Zero Rotation, Rock Solid)      │
  * ├──────────────┼───────────────────────────────────────────────────┤
- * │ HOVER LOCK   │ Closed Fist (Nắm bàn tay lại)                    │
+ * │ HOVER LOCK   │ Closed Fist (Curl fingers into fist)             │
  * │              │ Freeze position & rotation completely            │
  * └──────────────┴───────────────────────────────────────────────────┘
  */
@@ -32,7 +32,7 @@ export class WSReceiver {
 
     // Smoothed outputs (EMA)
     this._sx = 0;
-    this._sy = 1.5;
+    this._sy = 0.06;
     this._sz = 0;
     this._sYaw = 0;
     this._alpha = 0.28;
@@ -102,7 +102,7 @@ export class WSReceiver {
         const pinkyTip  = lms[20];
 
         // ════════════════════════════════════════════════════════
-        // 1) CLOSED FIST DETECTION (NẮM BÀN TAY LẠI)
+        // 1) CLOSED FIST DETECTION (CLOSED FIST)
         // ════════════════════════════════════════════════════════
         let closedCount = 0;
         if (dist2D(indexTip, wrist) < dist2D(indexPip, wrist) * 1.15) closedCount++;
@@ -131,7 +131,7 @@ export class WSReceiver {
         const rawZ = mapRange(palmSize, 0.12, 0.38, 4.5, -5.0);
 
         // ════════════════════════════════════════════════════════
-        // 5) YAW ROTATION — Hand Tilt Angle (Cổ tay nghiêng)
+        // 5) YAW ROTATION — Hand Tilt Angle (Wrist tilt)
         // ════════════════════════════════════════════════════════
         let rawYawRate = 0;
         if (!isFist) {

@@ -22,43 +22,43 @@
 
         <!-- Top Right: Gesture Control Guide -->
         <div class="guide-panel hud-interactive">
-          <h2>✋ Bảng Điều Khiển Cử Chỉ</h2>
+          <h2>✋ Gesture Control Guide</h2>
 
           <div class="guide-section">
-            <h3>Cử chỉ bàn tay</h3>
+            <h3>Hand Gestures</h3>
             <div class="guide-row">
               <span class="gesture-icon">✋</span>
               <div>
-                <span class="gesture-label">Mở bàn tay</span>
-                <span class="gesture-desc"> — Di chuyển bay tự do</span>
+                <span class="gesture-label">Open Hand</span>
+                <span class="gesture-desc"> — Free Flight</span>
               </div>
             </div>
             <div class="guide-row">
               <span class="gesture-icon">↕️</span>
               <div>
-                <span class="gesture-label">Giơ cao / Hạ thấp</span>
-                <span class="gesture-desc"> — Tăng / Giảm độ cao</span>
+                <span class="gesture-label">Raise / Lower</span>
+                <span class="gesture-desc"> — Ascend / Descend</span>
               </div>
             </div>
             <div class="guide-row">
               <span class="gesture-icon">🫸🫷</span>
               <div>
-                <span class="gesture-label">Đẩy tới / Kéo lùi</span>
-                <span class="gesture-desc"> — Bay Tiến / Bay Lùi</span>
+                <span class="gesture-label">Push / Pull</span>
+                <span class="gesture-desc"> — Fly Forward / Backward</span>
               </div>
             </div>
             <div class="guide-row">
               <span class="gesture-icon">🔄</span>
               <div>
-                <span class="gesture-label">Nghiêng cổ tay</span>
-                <span class="gesture-desc"> — Xoay Drone Trái / Phải (Yaw)</span>
+                <span class="gesture-label">Tilt Wrist</span>
+                <span class="gesture-desc"> — Yaw Rotate Left / Right</span>
               </div>
             </div>
             <div class="guide-row">
               <span class="gesture-icon">✊</span>
               <div>
-                <span class="gesture-label">Nắm bàn tay lại</span>
-                <span class="gesture-desc"> — Khóa vị trí / Phanh (Hover Lock)</span>
+                <span class="gesture-label">Closed Fist</span>
+                <span class="gesture-desc"> — Hover Lock / Brake</span>
               </div>
             </div>
           </div>
@@ -66,29 +66,29 @@
           <div class="divider"></div>
 
           <div class="guide-section">
-            <h3>Bàn phím (Dự phòng)</h3>
+            <h3>Keyboard (Fallback)</h3>
             <div class="guide-row">
               <span class="key-badge">W</span><span class="key-badge">S</span>
-              <span class="gesture-desc">Tiến / Lùi</span>
+              <span class="gesture-desc">Forward / Backward</span>
             </div>
             <div class="guide-row">
               <span class="key-badge">A</span><span class="key-badge">D</span>
-              <span class="gesture-desc">Trái / Phải</span>
+              <span class="gesture-desc">Left / Right</span>
             </div>
             <div class="guide-row">
               <span class="key-badge">Space</span><span class="key-badge">Shift</span>
-              <span class="gesture-desc">Lên / Xuống</span>
+              <span class="gesture-desc">Up / Down</span>
             </div>
             <div class="guide-row">
               <span class="key-badge">Q</span><span class="key-badge">E</span>
-              <span class="gesture-desc">Xoay Yaw</span>
+              <span class="gesture-desc">Rotate Yaw</span>
             </div>
           </div>
 
           <div class="divider"></div>
 
           <label class="model-dropzone" for="glb-input">
-            📦 Thả / Tải Model Blender (.glb)
+            📦 Drop / Load Blender Model (.glb)
             <input type="file" id="glb-input" accept=".glb,.gltf" style="display: none;" />
           </label>
         </div>
@@ -97,14 +97,14 @@
       <!-- Center Reticle -->
       <div class="hud-center">
         <div id="target-reticle" class="target-crosshair"></div>
-        <span id="target-coords">TARGET: (0.0, 1.5, 0.0)</span>
+        <span id="target-coords">TARGET: (0.0, 0.0, 0.0)</span>
       </div>
 
       <!-- Camera Preview PiP Window -->
       <div id="camera-preview-container" class="hud-interactive">
         <div class="preview-header">
           <span>📷 Camera Tracking</span>
-          <button id="btn-close-preview" title="Ẩn khung hình">✕</button>
+          <button id="btn-close-preview" title="Hide Preview">✕</button>
         </div>
         <canvas id="camera-preview-canvas" width="320" height="240"></canvas>
       </div>
@@ -114,16 +114,16 @@
         <!-- Telemetry Left: Flight Data -->
         <div class="telemetry-card">
           <div class="card-title">
-            <span>Thông Số Bay</span>
+            <span>Flight Telemetry</span>
             <span id="armed-indicator">● Armed</span>
           </div>
           <div class="telemetry-grid">
             <div class="metric-item">
-              <span class="metric-label">Độ cao (Alt)</span>
-              <span class="metric-val"><span id="val-alt">1.50</span><span class="metric-unit">m</span></span>
+              <span class="metric-label">Altitude (Alt)</span>
+              <span class="metric-val"><span id="val-alt">0.00</span><span class="metric-unit">m</span></span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Vận tốc</span>
+              <span class="metric-label">Speed</span>
               <span class="metric-val"><span id="val-spd">0.0</span><span class="metric-unit">m/s</span></span>
             </div>
             <div class="metric-item">
@@ -131,15 +131,15 @@
               <span class="metric-val"><span id="val-tilt">0° / 0°</span></span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Động cơ (RPM)</span>
-              <span class="metric-val"><span id="val-rpm">6400</span><span class="metric-unit">rpm</span></span>
+              <span class="metric-label">Motors (RPM)</span>
+              <span class="metric-val"><span id="val-rpm">0</span><span class="metric-unit">rpm</span></span>
             </div>
           </div>
 
           <!-- Action buttons row -->
           <div class="top-controls hud-interactive" style="margin-top: 12px;">
             <button id="btn-webcam-toggle" class="hud-btn btn-webcam">
-              <span>📷 Bật Webcam Web</span>
+              <span>📷 Start Webcam</span>
             </button>
             <button id="btn-mode-toggle" class="hud-btn active">
               <span>Finger Tracking</span>
@@ -156,24 +156,24 @@
         <!-- Telemetry Right: System -->
         <div class="telemetry-card">
           <div class="card-title">
-            <span>Hệ Thống & Cảm Biến</span>
+            <span>System & Sensors</span>
             <span id="val-fps">60 fps</span>
           </div>
           <div class="telemetry-grid">
             <div class="metric-item">
-              <span class="metric-label">Trạng thái tay</span>
+              <span class="metric-label">Hand State</span>
               <span class="metric-val" id="val-hands">No Hand</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Nguồn Tracking</span>
+              <span class="metric-label">Tracking Source</span>
               <span class="metric-val" id="val-source" style="font-size: 0.85rem;">WebSocket</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Pin</span>
+              <span class="metric-label">Battery</span>
               <span class="metric-val"><span id="val-bat">98</span><span class="metric-unit">%</span></span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Trạng thái mạng</span>
+              <span class="metric-label">Network Status</span>
               <span class="metric-val" id="val-ws" style="font-size: 0.85rem;">Standby</span>
             </div>
           </div>

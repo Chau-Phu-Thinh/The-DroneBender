@@ -28,7 +28,7 @@ const webCameraTracker = new WebCameraTracker();
 const mockController = new MockController(flightController);
 
 // 7. UI HUD
-const hud = new HUD(sceneManager, flightController, droneEntity, wsReceiver, webCameraTracker);
+const hud = new HUD(sceneManager, flightController, droneEntity, wsReceiver, webCameraTracker, mockController);
 
 // Shared Hand Target Handler
 function handleHandTarget(data) {

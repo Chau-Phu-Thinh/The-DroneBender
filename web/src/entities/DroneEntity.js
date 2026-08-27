@@ -209,8 +209,11 @@ export class DroneEntity {
   }
 
   update(delta, throttle = 1.0, isArmed = true) {
+    const droneY = this.root.position.y;
+    const isGrounded = droneY <= 0.08;
+
     // Smoothly adjust RPM based on throttle and armed state
-    const desiredRpm = isArmed ? 3000 + throttle * 5000 : 0;
+    const desiredRpm = isArmed ? (isGrounded ? 0 : 3000 + throttle * 5000) : 0;
     this.rpm = THREE.MathUtils.lerp(this.rpm, desiredRpm, delta * 5);
 
     // Rotate propellers
@@ -220,14 +223,13 @@ export class DroneEntity {
     });
 
     // Update Thrust Ground Ring position & scale with altitude
-    const droneY = this.root.position.y;
     this.thrustRing.position.x = this.root.position.x;
     this.thrustRing.position.z = this.root.position.z;
     
     // Scale ring larger & more transparent as drone climbs
     const ringScale = Math.max(0.6, 1.0 + droneY * 0.4);
     this.thrustRing.scale.set(ringScale, ringScale, ringScale);
-    this.thrustRing.material.opacity = isArmed ? Math.max(0.02, 0.25 - droneY * 0.05) : 0;
+    this.thrustRing.material.opacity = isArmed && !isGrounded ? Math.max(0.02, 0.25 - droneY * 0.05) : 0;
   }
 
   setPosition(pos) {

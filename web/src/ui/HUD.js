@@ -1,10 +1,11 @@
 export class HUD {
-  constructor(sceneManager, flightController, droneEntity, wsReceiver, webCameraTracker) {
+  constructor(sceneManager, flightController, droneEntity, wsReceiver, webCameraTracker, mockController) {
     this.sm = sceneManager;
     this.fc = flightController;
     this.drone = droneEntity;
     this.ws = wsReceiver;
     this.cam = webCameraTracker;
+    this.mock = mockController;
 
     // DOM Elements
     this.elWsStatus = document.getElementById('ws-status');
@@ -49,19 +50,19 @@ export class HUD {
         if (this.cam.isActive) {
           this.cam.stopCamera();
           this.elBtnWebcam.classList.remove('active');
-          this.elBtnWebcam.querySelector('span').textContent = '📷 Bật Webcam Web';
+          this.elBtnWebcam.querySelector('span').textContent = '📷 Start Webcam';
           if (this.elPreviewContainer) this.elPreviewContainer.classList.remove('visible');
         } else {
-          this.elBtnWebcam.querySelector('span').textContent = '⏳ Đang tải AI Model...';
+          this.elBtnWebcam.querySelector('span').textContent = '⏳ Loading AI Model...';
           try {
             await this.cam.startCamera();
             this.elBtnWebcam.classList.add('active');
-            this.elBtnWebcam.querySelector('span').textContent = '📷 Tắt Webcam Web';
+            this.elBtnWebcam.querySelector('span').textContent = '📷 Stop Webcam';
             if (this.elPreviewContainer) this.elPreviewContainer.classList.add('visible');
           } catch (err) {
             this.elBtnWebcam.classList.remove('active');
-            this.elBtnWebcam.querySelector('span').textContent = '📷 Thử Lại Webcam';
-            alert('Không thể mở camera: ' + err.message);
+            this.elBtnWebcam.querySelector('span').textContent = '📷 Retry Webcam';
+            alert('Cannot access camera: ' + err.message);
           }
         }
       });
@@ -92,6 +93,7 @@ export class HUD {
     // Reset Flight
     this.elBtnReset.addEventListener('click', () => {
       this.fc.reset();
+      if (this.mock) this.mock.reset();
     });
 
     // Custom Blender GLB Loader
@@ -167,9 +169,10 @@ export class HUD {
 
     // Target coords display
     const tgt = this.fc.targetPosition;
+    const tgtAlt = Math.max(0, tgt.y - this.fc.minAltitude);
     this.elTargetCoords.textContent = t.isHoverLocked
-      ? `LOCKED: (${tgt.x.toFixed(1)}, ${tgt.y.toFixed(1)}, ${tgt.z.toFixed(1)})`
-      : `TARGET: (${tgt.x.toFixed(1)}, ${tgt.y.toFixed(1)}, ${tgt.z.toFixed(1)})`;
+      ? `LOCKED: (${tgt.x.toFixed(1)}, ${tgtAlt.toFixed(1)}, ${tgt.z.toFixed(1)})`
+      : `TARGET: (${tgt.x.toFixed(1)}, ${tgtAlt.toFixed(1)}, ${tgt.z.toFixed(1)})`;
 
     // Active Tracking Source & Hand status
     const isCamActive = this.cam && this.cam.isActive;
@@ -200,10 +203,10 @@ export class HUD {
       }
     } else {
       if (isCamActive || isWsActive) {
-        this.elValHands.textContent = 'Waiting Hand…';
+        this.elValHands.textContent = 'Waiting for Hand…';
         this.elValHands.style.color = '#6b6b6b';
       } else {
-        this.elValHands.textContent = 'Bấm Bật Webcam';
+        this.elValHands.textContent = 'Start Webcam';
         this.elValHands.style.color = '#2d5016';
       }
     }

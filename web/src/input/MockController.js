@@ -4,7 +4,7 @@ export class MockController {
   constructor(flightController) {
     this.fc = flightController;
     this.keys = {};
-    this.targetPos = new THREE.Vector3(0, 1.5, 0);
+    this.targetPos = new THREE.Vector3(0, this.fc.minAltitude, 0);
     this.mouseTarget = new THREE.Vector2(0, 0);
 
     window.addEventListener('keydown', (e) => {
@@ -20,6 +20,10 @@ export class MockController {
       this.mouseTarget.x = (e.clientX / window.innerWidth) * 2 - 1;
       this.mouseTarget.y = -(e.clientY / window.innerHeight) * 2 + 1;
     });
+  }
+
+  reset() {
+    this.targetPos.set(0, this.fc.minAltitude, 0);
   }
 
   update(delta, isWSActive) {
@@ -50,20 +54,13 @@ export class MockController {
     if (this.fc.mode === 'manual_rc') {
       this.fc.setRCInput(pitchInput, rollInput, yawInput, throttleInput);
     } else {
-      // In finger tracking mode without WS: Keyboard moves the virtual target position
+      // In finger tracking mode without WS/Webcam: Keyboard moves the virtual target position
       if (hasKeyInput) {
         const moveSpeed = 4.0 * delta;
         this.targetPos.x += rollInput * moveSpeed;
         this.targetPos.z += pitchInput * moveSpeed;
         this.targetPos.y += (throttleInput - 0.5) * 2 * moveSpeed;
-        this.targetPos.y = Math.max(0.2, Math.min(10.0, this.targetPos.y));
-        this.fc.setTargetPosition(this.targetPos.x, this.targetPos.y, this.targetPos.z);
-      } else if (!isWSActive) {
-        // Subtle idle hover bobbing
-        const time = performance.now() * 0.0015;
-        this.targetPos.x = Math.sin(time * 0.8) * 0.5;
-        this.targetPos.z = Math.cos(time * 0.6) * 0.5;
-        this.targetPos.y = 1.5 + Math.sin(time * 2.0) * 0.15;
+        this.targetPos.y = Math.max(this.fc.minAltitude, Math.min(10.0, this.targetPos.y));
         this.fc.setTargetPosition(this.targetPos.x, this.targetPos.y, this.targetPos.z);
       }
     }

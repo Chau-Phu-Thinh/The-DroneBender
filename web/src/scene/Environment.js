@@ -83,7 +83,7 @@ export class Environment {
 }
 
 /**
- * Creates a high-res 8-point nautical compass rose (Đông Tây Nam Bắc)
+ * Creates a high-res 8-point nautical compass rose (North South East West)
  * exactly matching the classic compass design with N, S, E, W, nw, ne, sw, se.
  */
 function createCompassTexture() {
