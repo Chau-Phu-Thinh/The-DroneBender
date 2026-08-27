@@ -8,7 +8,7 @@ export class SceneManager {
     
     // Scene
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a0b10);
+    this.scene.background = new THREE.Color(0xf5f0e8);
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(
@@ -26,14 +26,14 @@ export class SceneManager {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.3;
     this.container.appendChild(this.renderer.domElement);
 
     // Orbit Controls
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.maxPolarAngle = Math.PI / 2 - 0.02; // Don't clip under ground
+    this.controls.maxPolarAngle = Math.PI / 2 - 0.02;
     this.controls.minDistance = 0.8;
     this.controls.maxDistance = 50;
     this.controls.target.set(0, 1, 0);
@@ -65,14 +65,9 @@ export class SceneManager {
 
   update(delta, dronePosition, droneRotation) {
     if (this.cameraMode === 'chase' && dronePosition) {
-      // Calculate target camera position behind the drone
       const rotatedOffset = this.chaseOffset.clone().applyEuler(new THREE.Euler(0, droneRotation ? droneRotation.y : 0, 0));
       const targetCamPos = dronePosition.clone().add(rotatedOffset);
-      
-      // Smooth camera follow (LERP)
       this.camera.position.lerp(targetCamPos, 0.08);
-      
-      // Look slightly above the drone
       const lookTarget = dronePosition.clone().add(new THREE.Vector3(0, 0.3, 0));
       this.camera.lookAt(lookTarget);
     } else {

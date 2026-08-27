@@ -21,6 +21,7 @@ export class HUD {
     this.elValPing = document.getElementById('val-ping');
     this.elValBat = document.getElementById('val-bat');
     this.elTargetCoords = document.getElementById('target-coords');
+    this.elArmedIndicator = document.getElementById('armed-indicator');
 
     this.frameCount = 0;
     this.lastFpsTime = performance.now();
@@ -36,14 +37,14 @@ export class HUD {
       const mode = this.fc.toggleMode();
       this.elBtnMode.classList.toggle('active', mode === 'finger_tracking');
       this.elBtnMode.querySelector('span').textContent =
-        mode === 'finger_tracking' ? '🎯 Mode: Finger Tracking' : '🎮 Mode: Manual RC';
+        mode === 'finger_tracking' ? 'Finger Tracking' : 'Manual RC';
     });
 
     // Camera Switcher
     this.elBtnCam.addEventListener('click', () => {
       const mode = this.sm.toggleCameraMode();
       this.elBtnCam.querySelector('span').textContent =
-        mode === 'chase' ? '📹 Cam: Chase Follow' : '🌐 Cam: Free Orbit';
+        mode === 'chase' ? 'Chase Cam' : 'Free Orbit';
     });
 
     // Reset Flight
@@ -80,15 +81,15 @@ export class HUD {
 
   updateWSStatus(connected) {
     if (connected) {
-      this.elWsStatus.textContent = 'WS ONLINE';
+      this.elWsStatus.textContent = 'Connected';
       this.elWsStatus.className = 'status-tag status-online';
       this.elValPing.textContent = '4';
     } else {
-      this.elWsStatus.textContent = 'OFFLINE (FALLBACK)';
+      this.elWsStatus.textContent = 'Offline';
       this.elWsStatus.className = 'status-tag status-offline';
       this.elValPing.textContent = '--';
-      this.elValHands.textContent = 'NO HAND';
-      this.elValHands.style.color = '#64748b';
+      this.elValHands.textContent = 'No Hand';
+      this.elValHands.style.color = '';
     }
   }
 
@@ -100,7 +101,7 @@ export class HUD {
       this.fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsTime));
       this.frameCount = 0;
       this.lastFpsTime = now;
-      this.elValFps.textContent = `${this.fps} FPS`;
+      this.elValFps.textContent = `${this.fps} fps`;
 
       // Slow battery drain
       this.battery = Math.max(12, this.battery - 0.01);
@@ -114,6 +115,9 @@ export class HUD {
     this.elValTilt.textContent = `${t.pitchDeg}° / ${t.rollDeg}°`;
     this.elValRpm.textContent = t.rpm;
 
+    // Armed status
+    this.elArmedIndicator.textContent = t.isArmed ? '● Armed' : '○ Disarmed';
+
     // Target coords display
     const tgt = this.fc.targetPosition;
     this.elTargetCoords.textContent = `TARGET: (${tgt.x.toFixed(1)}, ${tgt.y.toFixed(1)}, ${tgt.z.toFixed(1)})`;
@@ -121,11 +125,11 @@ export class HUD {
     // Hands status
     if (this.ws.isConnected) {
       if (this.ws.handCount > 0) {
-        this.elValHands.textContent = `ACTIVE (1 HAND)`;
-        this.elValHands.style.color = '#00ffcc';
+        this.elValHands.textContent = 'Tracking';
+        this.elValHands.style.color = '#2d5016';
       } else {
-        this.elValHands.textContent = 'WAITING HAND';
-        this.elValHands.style.color = '#ffaa00';
+        this.elValHands.textContent = 'Waiting…';
+        this.elValHands.style.color = '#6b6b6b';
       }
     }
   }

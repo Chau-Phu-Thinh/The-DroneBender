@@ -23,10 +23,10 @@ export class DroneEntity {
   createThrustRing() {
     const geo = new THREE.RingGeometry(0.3, 0.38, 32);
     const mat = new THREE.MeshBasicMaterial({
-      color: 0x00ffcc,
+      color: 0x2d2d2d,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.25,
     });
     const ring = new THREE.Mesh(geo, mat);
     ring.rotation.x = -Math.PI / 2;
@@ -40,9 +40,9 @@ export class DroneEntity {
     // 1. Central Body
     const bodyGeo = new THREE.BoxGeometry(0.35, 0.12, 0.45);
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x181a20,
-      metalness: 0.8,
-      roughness: 0.3,
+      color: 0x2d2d2d,
+      metalness: 0.6,
+      roughness: 0.4,
     });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.castShadow = true;
@@ -51,9 +51,9 @@ export class DroneEntity {
     // Top Canopy (Aerodynamic)
     const canopyGeo = new THREE.ConeGeometry(0.16, 0.25, 4);
     const canopyMat = new THREE.MeshStandardMaterial({
-      color: 0x00ffcc,
-      metalness: 0.9,
-      roughness: 0.1,
+      color: 0x1a1a1a,
+      metalness: 0.7,
+      roughness: 0.2,
     });
     const canopy = new THREE.Mesh(canopyGeo, canopyMat);
     canopy.rotation.y = Math.PI / 4;
@@ -66,15 +66,15 @@ export class DroneEntity {
     // Front Camera Gimbal
     const camGimbal = new THREE.Mesh(
       new THREE.SphereGeometry(0.06, 16, 16),
-      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.1 })
+      new THREE.MeshStandardMaterial({ color: 0x3d3d3d, metalness: 0.7, roughness: 0.2 })
     );
     camGimbal.position.set(0, -0.02, -0.22);
     this.droneBodyGroup.add(camGimbal);
 
-    // Camera Lens (Glow Cyan)
+    // Camera Lens
     const lens = new THREE.Mesh(
       new THREE.CylinderGeometry(0.03, 0.03, 0.02, 16),
-      new THREE.MeshBasicMaterial({ color: 0x00ffcc })
+      new THREE.MeshBasicMaterial({ color: 0x1a1a1a })
     );
     lens.rotation.x = Math.PI / 2;
     lens.position.set(0, -0.02, -0.26);
@@ -82,15 +82,15 @@ export class DroneEntity {
 
     // 2. Carbon Fiber Arms (X-Frame configuration)
     const armMat = new THREE.MeshStandardMaterial({
-      color: 0x111317,
-      roughness: 0.5,
-      metalness: 0.7,
+      color: 0x4a4a4a,
+      roughness: 0.6,
+      metalness: 0.5,
     });
 
     const motorMat = new THREE.MeshStandardMaterial({
-      color: 0x334155,
-      metalness: 0.9,
-      roughness: 0.2,
+      color: 0x3d3d3d,
+      metalness: 0.7,
+      roughness: 0.3,
     });
 
     // 4 Arm positions (FL, FR, BL, BR)
@@ -124,9 +124,9 @@ export class DroneEntity {
 
       const bladeGeo = new THREE.BoxGeometry(0.48, 0.005, 0.04);
       const bladeMat = new THREE.MeshStandardMaterial({
-        color: 0x050505,
-        roughness: 0.4,
-        metalness: 0.8,
+        color: 0x1a1a1a,
+        roughness: 0.5,
+        metalness: 0.6,
       });
       const blade = new THREE.Mesh(bladeGeo, bladeMat);
       blade.castShadow = true;
@@ -135,9 +135,9 @@ export class DroneEntity {
       // Translucent blurred rotor disc for high speed rotation
       const discGeo = new THREE.CircleGeometry(0.24, 24);
       const discMat = new THREE.MeshBasicMaterial({
-        color: 0x00ffcc,
+        color: 0x2d2d2d,
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.08,
         side: THREE.DoubleSide,
       });
       const disc = new THREE.Mesh(discGeo, discMat);
@@ -151,7 +151,7 @@ export class DroneEntity {
       });
 
       // Navigation LED Lights
-      const ledColor = pos.isFront ? 0x00ffcc : 0xff0055;
+      const ledColor = pos.isFront ? 0x2d5016 : 0x8b1a1a;
       const led = new THREE.Mesh(
         new THREE.SphereGeometry(0.025, 8, 8),
         new THREE.MeshBasicMaterial({ color: ledColor })
@@ -161,7 +161,7 @@ export class DroneEntity {
 
       // Light point for front LEDs
       if (pos.isFront) {
-        const pointLight = new THREE.PointLight(ledColor, 0.5, 2);
+        const pointLight = new THREE.PointLight(ledColor, 0.3, 2);
         pointLight.position.set(pos.x, -0.02, pos.z);
         this.droneBodyGroup.add(pointLight);
       }
@@ -227,7 +227,7 @@ export class DroneEntity {
     // Scale ring larger & more transparent as drone climbs
     const ringScale = Math.max(0.6, 1.0 + droneY * 0.4);
     this.thrustRing.scale.set(ringScale, ringScale, ringScale);
-    this.thrustRing.material.opacity = isArmed ? Math.max(0.05, 0.45 - droneY * 0.08) : 0;
+    this.thrustRing.material.opacity = isArmed ? Math.max(0.02, 0.25 - droneY * 0.05) : 0;
   }
 
   setPosition(pos) {
