@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffcc' stroke-width='2'><path d='M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The DroneBender — 3D Drone Flight Simulation</title>
+    <link rel="stylesheet" href="/src/ui/style.css" />
+  </head>
+  <body>
+    <div id="canvas-container"></div>
+
+    <!-- HUD Overlay -->
+    <div id="hud-overlay">
+      <!-- Header -->
+      <header class="hud-header">
+        <div class="brand-badge">
+          <h1>The DroneBender</h1>
+          <span id="ws-status" class="status-tag status-offline">Connecting...</span>
+        </div>
+
+        <div class="top-controls hud-interactive">
+          <button id="btn-mode-toggle" class="hud-btn active">
+            <span>🎯 Mode: Finger Tracking</span>
+          </button>
+          <button id="btn-camera-toggle" class="hud-btn">
+            <span>📹 Cam: Chase Follow</span>
+          </button>
+          <button id="btn-reset" class="hud-btn">
+            <span>↺ Reset Flight</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Center Reticle (Shows Target Finger Point) -->
+      <div class="hud-center">
+        <div id="target-reticle" class="target-crosshair"></div>
+        <span id="target-coords" style="font-size: 0.7rem; color: #00ffcc; margin-top: 8px; text-shadow: 0 0 6px rgba(0,255,204,0.6);">TARGET: (0.0, 1.5, 0.0)</span>
+      </div>
+
+      <!-- Bottom Telemetry HUD -->
+      <footer class="hud-bottom">
+        <!-- Telemetry Left -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>FLIGHT TELEMETRY</span>
+            <span id="armed-indicator" style="color: #00ffcc;">● ARMED</span>
+          </div>
+          <div class="telemetry-grid">
+            <div class="metric-item">
+              <span class="metric-label">ALTITUDE</span>
+              <span class="metric-val"><span id="val-alt">1.50</span><span class="metric-unit">m</span></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">AIR SPEED</span>
+              <span class="metric-val"><span id="val-spd">0.0</span><span class="metric-unit">m/s</span></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">PITCH / ROLL</span>
+              <span class="metric-val"><span id="val-tilt">0° / 0°</span></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">THROTTLE (RPM)</span>
+              <span class="metric-val"><span id="val-rpm">6400</span><span class="metric-unit">rpm</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Controls Help -->
+        <div class="telemetry-card help-card hud-interactive">
+          <div class="card-title">CONTROL GUIDE</div>
+          <p>👉 <strong>Index Finger:</strong> Point in air to steer Drone target</p>
+          <p>🤏 <strong>Pinch (Thumb+Index):</strong> Boost / Grab altitude</p>
+          <p>⌨️ <strong>Keyboard Fallback:</strong> <span class="key-badge">WASD</span> move, <span class="key-badge">Shift/Space</span> altitude, <span class="key-badge">Q/E</span> yaw</p>
+          
+          <label class="model-dropzone" for="glb-input">
+            📦 Drop/Load Blender (.glb) Model
+            <input type="file" id="glb-input" accept=".glb,.gltf" style="display: none;" />
+          </label>
+        </div>
+
+        <!-- Telemetry Right -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>SYSTEM & TRACKING</span>
+            <span id="val-fps" style="color: #38bdf8;">60 FPS</span>
+          </div>
+          <div class="telemetry-grid">
+            <div class="metric-item">
+              <span class="metric-label">HAND DETECTED</span>
+              <span class="metric-val" id="val-hands" style="color: #ffaa00;">NO HAND</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">LATENCY</span>
+              <span class="metric-val"><span id="val-ping">--</span><span class="metric-unit">ms</span></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">BATTERY</span>
+              <span class="metric-val"><span id="val-bat">98</span><span class="metric-unit">%</span></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">WS PROTOCOL</span>
+              <span class="metric-val" style="font-size: 0.85rem; color: #00ffcc;">ws://8765</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

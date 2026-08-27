@@ -7,18 +7,18 @@ import sys
 from bungeegum.core.config import AppConfig
 from bungeegum.core.events import bus
 from bungeegum.outputs.qt_overlay import OverlayWindow
+from bungeegum.outputs.websocket import WebSocketBroadcaster
 from bungeegum.tracking.camera import CameraCapture
-from bungeegum.tracking.face_tracker import FaceTracker
 from bungeegum.tracking.hand_tracker import HandTracker
 
 
 def run(config: AppConfig | None = None) -> None:
-    """Start the full BungeeGum pipeline.
+    """Start the full The DroneBender pipeline.
 
     1. Camera capture (background thread)
     2. Hand tracker (subscribes to camera frames)
-    3. Face tracker (subscribes to camera frames)
-    4. PyQt6 overlay (subscribes to hand + face detections)
+    3. WebSocket server (broadcasts hands/gestures to Three.js)
+    4. PyQt6 overlay (subscribes to hand detections)
 
     Pass a custom :class:`AppConfig` to override defaults.
     """
@@ -30,20 +30,14 @@ def run(config: AppConfig | None = None) -> None:
     # --- Tracking layer ---
     camera = CameraCapture(bus, cfg.camera)
     hand_tracker = HandTracker(bus, cfg.tracker)
-    face_tracker = FaceTracker(bus, cfg.face_tracker)
-
-    # --- Processing layer (placeholders, wire up when ready) ---
-    # from bungeegum.processing.gestures import GestureRecognizer
-    # gesture_engine = GestureRecognizer(bus)
-    # gesture_engine.start()
 
     # --- Output layer ---
+    ws_server = WebSocketBroadcaster(bus, cfg.websocket)
+    ws_server.start()
+
     app = QApplication(sys.argv)
     overlay = OverlayWindow(bus, fullscreen=cfg.fullscreen)
 
-    # Start pipeline: face tracker first (so its frame callback runs before
-    # hand tracker — face boxes must be available for overlap filtering).
-    face_tracker.start()
     hand_tracker.start()
     camera.start()
 
@@ -53,5 +47,5 @@ def run(config: AppConfig | None = None) -> None:
     # --- Cleanup ---
     camera.stop()
     hand_tracker.stop()
-    face_tracker.stop()
+    ws_server.stop()
     sys.exit(exit_code)
