@@ -23,9 +23,9 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget
 
-from bungeegum.core.config import HAND_CONNECTIONS, FINGERTIPS
-from bungeegum.core.events import EventBus
-from bungeegum.core.types import HandData
+from thedronebender.core.config import HAND_CONNECTIONS, FINGERTIPS
+from thedronebender.core.events import EventBus
+from thedronebender.core.types import HandData
 
 # ---------------------------------------------------------------------------
 # Pre-built pen / brush constants — avoids per-frame object allocation

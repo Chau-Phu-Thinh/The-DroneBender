@@ -9,8 +9,8 @@ Planned mappings:
 
 from __future__ import annotations
 
-from bungeegum.core.events import EventBus
-from bungeegum.core.types import GestureEvent
+from thedronebender.core.events import EventBus
+from thedronebender.core.types import GestureEvent
 
 
 class ActionMapper:

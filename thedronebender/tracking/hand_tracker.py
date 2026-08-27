@@ -11,9 +11,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import numpy as np
 
-from bungeegum.core.config import TrackerConfig
-from bungeegum.core.events import EventBus
-from bungeegum.core.types import HandData, Landmark
+from thedronebender.core.config import TrackerConfig
+from thedronebender.core.events import EventBus
+from thedronebender.core.types import HandData, Landmark
 
 
 class HandTracker:

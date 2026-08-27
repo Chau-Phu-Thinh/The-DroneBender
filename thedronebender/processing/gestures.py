@@ -10,8 +10,8 @@ Planned gestures:
 
 from __future__ import annotations
 
-from bungeegum.core.events import EventBus
-from bungeegum.core.types import GestureEvent, HandData
+from thedronebender.core.events import EventBus
+from thedronebender.core.types import GestureEvent, HandData
 
 
 class GestureRecognizer:

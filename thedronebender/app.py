@@ -4,16 +4,16 @@ from __future__ import annotations
 
 import sys
 
-from bungeegum.core.config import AppConfig
-from bungeegum.core.events import bus
-from bungeegum.outputs.qt_overlay import OverlayWindow
-from bungeegum.outputs.websocket import WebSocketBroadcaster
-from bungeegum.tracking.camera import CameraCapture
-from bungeegum.tracking.hand_tracker import HandTracker
+from thedronebender.core.config import AppConfig
+from thedronebender.core.events import bus
+from thedronebender.outputs.qt_overlay import OverlayWindow
+from thedronebender.outputs.websocket import WebSocketBroadcaster
+from thedronebender.tracking.camera import CameraCapture
+from thedronebender.tracking.hand_tracker import HandTracker
 
 
 def run(config: AppConfig | None = None) -> None:
-    """Start the full The DroneBender pipeline.
+    """Start the full TheDroneBender pipeline.
 
     1. Camera capture (background thread)
     2. Hand tracker (subscribes to camera frames)

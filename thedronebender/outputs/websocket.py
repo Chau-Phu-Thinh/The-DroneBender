@@ -17,9 +17,9 @@ import json
 import threading
 from typing import Any
 
-from bungeegum.core.config import WebSocketConfig
-from bungeegum.core.events import EventBus
-from bungeegum.core.types import GestureEvent, HandData
+from thedronebender.core.config import WebSocketConfig
+from thedronebender.core.events import EventBus
+from thedronebender.core.types import GestureEvent, HandData
 
 # websockets is an optional dependency — fail gracefully
 try:

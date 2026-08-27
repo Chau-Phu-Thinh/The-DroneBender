@@ -1,6 +1,1 @@
 """TheDroneBender — Real-time hand tracking with multi-output support."""
-
-from thedronebender.app import run
-
-if __name__ == "__main__":
-    run()

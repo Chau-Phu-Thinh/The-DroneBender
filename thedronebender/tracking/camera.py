@@ -7,8 +7,8 @@ import threading
 import cv2
 import numpy as np
 
-from bungeegum.core.config import CameraConfig
-from bungeegum.core.events import EventBus
+from thedronebender.core.config import CameraConfig
+from thedronebender.core.events import EventBus
 
 
 class CameraCapture:

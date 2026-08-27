@@ -8,7 +8,7 @@ Planned filters:
 
 from __future__ import annotations
 
-from bungeegum.core.types import HandData
+from thedronebender.core.types import HandData
 
 
 class EMAFilter:
