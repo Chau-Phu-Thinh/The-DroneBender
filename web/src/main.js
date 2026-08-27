@@ -32,15 +32,20 @@ wsReceiver.onStatusChange = (connected) => {
 };
 
 wsReceiver.onHandTarget = (data) => {
-  // Feed 3D target coordinates from finger tracker into FlightController
-  flightController.setTargetPosition(data.x, data.y, data.z);
+  if (data.isFist) {
+    // Closed Fist -> Lock position / Hover in place
+    flightController.setHoverLock(true);
+  } else {
+    // Open Hand -> Full 3D Flight & Yaw Steering
+    flightController.setHoverLock(false);
+    flightController.setTargetPosition(data.x, data.y, data.z);
+    flightController.applyYawRate(data.yawRate);
+  }
 };
 
 wsReceiver.onGesture = (gesture) => {
   if (gesture.name === 'fist') {
-    flightController.reset();
-  } else if (gesture.name === 'pinch') {
-    // Boost throttle / Altitude hold
+    flightController.setHoverLock(true);
   }
 };
 

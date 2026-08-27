@@ -2,12 +2,23 @@
  * WebSocket receiver — connects to the Python hand-tracking backend
  * and translates raw hand landmarks into drone flight commands.
  *
- * Gesture mapping (intuitive drone control):
- *
- *   LEFT / RIGHT  →  Index fingertip X position (Landmark 8)
- *   UP / DOWN     →  Wrist Y position (Landmark 0) — raise hand = ascend
- *   FORWARD / BACK →  Hand tilt angle (wrist-to-middle-finger vector pitch)
- *   ALTITUDE LOCK →  Pinch (thumb tip ↔ index tip distance < threshold)
+ * ┌──────────────────────────────────────────────────────────────────┐
+ * │                   OPTIMAL GESTURE MAPPING                       │
+ * ├──────────────┬───────────────────────────────────────────────────┤
+ * │ LEFT / RIGHT │ Wrist X position on screen                       │
+ * ├──────────────┼───────────────────────────────────────────────────┤
+ * │ UP / DOWN    │ Wrist Y position on screen (raise hand = ascend) │
+ * ├──────────────┼───────────────────────────────────────────────────┤
+ * │ FORWARD/BACK │ Hand depth / Palm size & Hand forward tilt       │
+ * │              │ (Push hand forward = Fly Forward)                │
+ * │              │ (Pull hand back = Fly Backward)                  │
+ * ├──────────────┼───────────────────────────────────────────────────┤
+ * │ YAW ROTATE   │ Hand roll angle (Tilt hand left / right)         │
+ * │              │ (Tilt CW = Yaw Right, Tilt CCW = Yaw Left)       │
+ * ├──────────────┼───────────────────────────────────────────────────┤
+ * │ HOVER LOCK   │ Closed Fist (Nắm bàn tay lại)                    │
+ * │              │ Freeze drone position & stabilize                │
+ * └──────────────┴───────────────────────────────────────────────────┘
  */
 
 export class WSReceiver {
@@ -15,19 +26,19 @@ export class WSReceiver {
     this.url = url;
     this.ws = null;
     this.isConnected = false;
-    this.lastTimestamp = 0;
-    this.latencyMs = 0;
     this.handCount = 0;
 
-    // Smoothed target (exponential moving average to reduce jitter)
-    this._smoothX = 0;
-    this._smoothY = 1.5;
-    this._smoothZ = 0;
-    this._smoothAlpha = 0.35; // 0 = no smoothing, 1 = no lag
+    // Smoothed outputs (EMA)
+    this._sx = 0;
+    this._sy = 1.5;
+    this._sz = 0;
+    this._sYaw = 0;
+    this._alpha = 0.28;
+    this._alphaYaw = 0.22;
 
     // Callbacks
     this.onStatusChange = null;
-    this.onHandTarget = null;
+    this.onHandTarget = null; // Emits { x, y, z, yawRate, isFist, handedness, confidence }
     this.onGesture = null;
 
     this.connect();
@@ -39,16 +50,15 @@ export class WSReceiver {
 
       this.ws.onopen = () => {
         this.isConnected = true;
-        console.log(`✓ Connected to Hand Tracking WebSocket at ${this.url}`);
+        console.log(`✓ Connected to Hand Tracking at ${this.url}`);
         if (this.onStatusChange) this.onStatusChange(true);
       };
 
       this.ws.onmessage = (event) => {
         try {
-          const payload = JSON.parse(event.data);
-          this.handlePayload(payload);
+          this.handlePayload(JSON.parse(event.data));
         } catch (err) {
-          console.error('Error parsing WS message:', err);
+          console.error('WS parse error:', err);
         }
       };
 
@@ -63,7 +73,6 @@ export class WSReceiver {
         this.isConnected = false;
       };
     } catch (err) {
-      console.warn('WebSocket connection error:', err);
       setTimeout(() => this.connect(), 2000);
     }
   }
@@ -76,62 +85,93 @@ export class WSReceiver {
       if (hands.length > 0) {
         const hand = hands[0];
         const lms = hand.landmarks;
+        if (!lms || lms.length < 21) return;
 
-        if (lms && lms.length >= 21) {
-          // Key landmarks
-          const wrist       = lms[0];   // [x, y, z]
-          const thumbTip    = lms[4];
-          const indexTip    = lms[8];
-          const middleMcp   = lms[9];   // middle finger base
-          const middleTip   = lms[12];
+        // Key landmarks
+        const wrist     = lms[0];
+        const thumbTip  = lms[4];
+        const indexMcp  = lms[5];
+        const indexPip  = lms[6];
+        const indexTip  = lms[8];
+        const middleMcp = lms[9];
+        const middlePip = lms[10];
+        const middleTip = lms[12];
+        const ringMcp   = lms[13];
+        const ringPip   = lms[14];
+        const ringTip   = lms[16];
+        const pinkyMcp  = lms[17];
+        const pinkyPip  = lms[18];
+        const pinkyTip  = lms[20];
 
-          // ── LEFT / RIGHT ──────────────────────────────────────
-          // Wrist X position (normalized 0..1) → world X (-6..+6 m)
-          // Using wrist instead of fingertip for more stable lateral control
-          const rawX = mapRange(wrist[0], 0.0, 1.0, -6.0, 6.0);
+        // ════════════════════════════════════════════════════════
+        // 1) CLOSED FIST DETECTION (NẮM BÀN TAY LẠI)
+        // ════════════════════════════════════════════════════════
+        // Check if fingertips are curled close to wrist / MCPs
+        let closedCount = 0;
+        if (dist2D(indexTip, wrist) < dist2D(indexPip, wrist) * 1.15) closedCount++;
+        if (dist2D(middleTip, wrist) < dist2D(middlePip, wrist) * 1.15) closedCount++;
+        if (dist2D(ringTip, wrist) < dist2D(ringPip, wrist) * 1.15) closedCount++;
+        if (dist2D(pinkyTip, wrist) < dist2D(pinkyPip, wrist) * 1.15) closedCount++;
 
-          // ── UP / DOWN (Altitude) ──────────────────────────────
-          // Wrist Y (0 = top of camera, 1 = bottom) → inverted altitude
-          // Raise hand high = fly up, lower hand = descend
-          const rawY = mapRange(wrist[1], 0.85, 0.15, 0.3, 6.0);
+        // Fist triggered if at least 3 fingers are closed
+        const isFist = closedCount >= 3;
 
-          // ── FORWARD / BACKWARD ────────────────────────────────
-          // Computed from the pitch angle of the hand:
-          //   Palm tilted forward (fingers pointing away) → fly forward
-          //   Palm tilted back (fingers pointing toward you) → fly backward
-          //
-          // We measure the Y-difference between middle fingertip and wrist.
-          // Neutral hand: middleTip.y ≈ wrist.y → pitch ~0
-          // Tilt forward (fingers up in camera = lower Y): middleTip.y < wrist.y → negative pitch → forward
-          // Tilt back (fingers down = higher Y): middleTip.y > wrist.y → positive pitch → backward
-          const handPitchDelta = middleTip[1] - wrist[1];
-          // Typical range: -0.25 (forward tilt) to +0.15 (back tilt)
-          const rawZ = mapRange(handPitchDelta, -0.20, 0.15, -4.0, 3.0);
+        // ════════════════════════════════════════════════════════
+        // 2) LEFT / RIGHT (X) — Wrist X screen position
+        // ════════════════════════════════════════════════════════
+        const rawX = mapRange(wrist[0], 0.12, 0.88, -6.0, 6.0);
 
-          // ── PINCH = Lock Altitude ─────────────────────────────
-          const pinchDist = Math.hypot(
-            indexTip[0] - thumbTip[0],
-            indexTip[1] - thumbTip[1],
-            indexTip[2] - thumbTip[2]
-          );
-          const isPinching = pinchDist < 0.07;
+        // ════════════════════════════════════════════════════════
+        // 3) UP / DOWN (Altitude Y) — Wrist Y screen position
+        // ════════════════════════════════════════════════════════
+        // High hand on screen = High altitude, Low hand = Descend
+        const rawY = mapRange(wrist[1], 0.85, 0.15, 0.4, 6.0);
 
-          // ── Apply EMA smoothing ───────────────────────────────
-          const a = this._smoothAlpha;
-          this._smoothX = this._smoothX * (1 - a) + rawX * a;
-          this._smoothY = this._smoothY * (1 - a) + rawY * a;
-          this._smoothZ = this._smoothZ * (1 - a) + rawZ * a;
+        // ════════════════════════════════════════════════════════
+        // 4) FORWARD / BACKWARD (Z) — Hand Depth + Palm Size
+        // ════════════════════════════════════════════════════════
+        // Measure palm span (wrist to middle MCP base)
+        const palmSize = dist2D(wrist, middleMcp);
+        // Also combine with index-wrist delta
+        const rawZ = mapRange(palmSize, 0.12, 0.38, 4.5, -5.0);
 
-          if (this.onHandTarget) {
-            this.onHandTarget({
-              x: this._smoothX,
-              y: isPinching ? this._smoothY : this._smoothY,  // keep Y when pinching in future
-              z: this._smoothZ,
-              isPinching,
-              handedness: hand.handedness,
-              confidence: hand.confidence,
-            });
-          }
+        // ════════════════════════════════════════════════════════
+        // 5) YAW ROTATION — Hand Roll Angle (Nghiêng bàn tay)
+        // ════════════════════════════════════════════════════════
+        // Angle between index MCP and pinky MCP
+        const rollDx = pinkyMcp[0] - indexMcp[0];
+        const rollDy = pinkyMcp[1] - indexMcp[1];
+        let rollAngle = Math.atan2(rollDy, rollDx);
+
+        if (hand.handedness === 'Left') rollAngle = -rollAngle;
+
+        const DEADZONE = 0.15; // ~8.5 degrees deadzone
+        let yawRate = 0;
+        if (Math.abs(rollAngle) > DEADZONE) {
+          const sign = rollAngle > 0 ? 1 : -1;
+          const mag = Math.abs(rollAngle) - DEADZONE;
+          yawRate = sign * mapRange(mag, 0, 0.7, 0, 2.8);
+        }
+
+        // Apply EMA smoothing
+        const a = this._alpha;
+        const aY = this._alphaYaw;
+        this._sx = lerp(this._sx, rawX, a);
+        this._sy = lerp(this._sy, rawY, a);
+        this._sz = lerp(this._sz, rawZ, a);
+        this._sYaw = lerp(this._sYaw, yawRate, aY);
+
+        if (this.onHandTarget) {
+          this.onHandTarget({
+            x: this._sx,
+            y: this._sy,
+            z: this._sz,
+            yawRate: this._sYaw,
+            isFist,
+            isPinching: isFist, // alias for backward compatibility
+            handedness: hand.handedness,
+            confidence: hand.confidence,
+          });
         }
       }
     } else if (payload.type === 'gesture') {
@@ -140,8 +180,21 @@ export class WSReceiver {
   }
 }
 
-// ── Utility ─────────────────────────────────────────────────────────
+// ── Utilities ───────────────────────────────────────────────────────
+
 function mapRange(x, inMin, inMax, outMin, outMax) {
-  const clamped = Math.min(Math.max(x, Math.min(inMin, inMax)), Math.max(inMin, inMax));
+  const lo = Math.min(inMin, inMax);
+  const hi = Math.max(inMin, inMax);
+  const clamped = Math.min(Math.max(x, lo), hi);
   return ((clamped - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+}
+
+function dist2D(a, b) {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function lerp(current, target, alpha) {
+  return current * (1 - alpha) + target * alpha;
 }

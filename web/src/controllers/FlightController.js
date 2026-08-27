@@ -12,6 +12,8 @@ export class FlightController {
     // Mode
     this.mode = FlightMode.FINGER_TRACKING;
     this.isArmed = true;
+    this.isHoverLocked = false;
+    this.hoverLockPos = new THREE.Vector3(0, 1.5, 0);
 
     // Kinematics State
     this.position = new THREE.Vector3(0, 1.5, 0);
@@ -22,7 +24,7 @@ export class FlightController {
     this.pitch = 0; // X axis
     this.roll = 0;  // Z axis
     this.yaw = 0;   // Y axis
-    this.targetYaw = 0;
+    this.targetYawRate = 0;
 
     // RC Flight Inputs (Normalized -1.0 to 1.0)
     this.rcInput = {
@@ -60,12 +62,26 @@ export class FlightController {
     this.isArmed = armed;
   }
 
+  setHoverLock(locked) {
+    if (locked && !this.isHoverLocked) {
+      // Just entered lock: save current position
+      this.hoverLockPos.copy(this.position);
+    }
+    this.isHoverLocked = locked;
+  }
+
   setTargetPosition(x, y, z) {
-    this.targetPosition.set(
-      THREE.MathUtils.clamp(x, -15, 15),
-      THREE.MathUtils.clamp(y, this.minAltitude, this.maxAltitude),
-      THREE.MathUtils.clamp(z, -15, 15)
-    );
+    if (!this.isHoverLocked) {
+      this.targetPosition.set(
+        THREE.MathUtils.clamp(x, -15, 15),
+        THREE.MathUtils.clamp(y, this.minAltitude, this.maxAltitude),
+        THREE.MathUtils.clamp(z, -15, 15)
+      );
+    }
+  }
+
+  applyYawRate(rate) {
+    this.targetYawRate = rate;
   }
 
   setRCInput(pitch, roll, yawRate, throttle) {
@@ -79,10 +95,12 @@ export class FlightController {
     this.position.set(0, 1.5, 0);
     this.velocity.set(0, 0, 0);
     this.targetPosition.set(0, 1.5, 0);
+    this.hoverLockPos.set(0, 1.5, 0);
+    this.isHoverLocked = false;
     this.pitch = 0;
     this.roll = 0;
     this.yaw = 0;
-    this.targetYaw = 0;
+    this.targetYawRate = 0;
     this.drone.setPosition(this.position);
     this.drone.setRotation(new THREE.Euler(0, 0, 0));
   }
@@ -124,19 +142,25 @@ export class FlightController {
   }
 
   updateFingerTracking(delta) {
-    // 1. Compute displacement vector to target finger
-    const error = new THREE.Vector3().subVectors(this.targetPosition, this.position);
+    // 1. Update Yaw from hand tilt roll angle
+    if (this.targetYawRate !== 0) {
+      this.yaw += this.targetYawRate * delta;
+    }
 
-    // 2. Velocity towards target (Proportional with damping)
-    const desiredVel = error.clone().multiplyScalar(this.posLerpSpeed);
+    // 2. Target following or Hover lock
+    const target = this.isHoverLocked ? this.hoverLockPos : this.targetPosition;
+    const error = new THREE.Vector3().subVectors(target, this.position);
+
+    // 3. Velocity calculation
+    const desiredVel = error.clone().multiplyScalar(this.isHoverLocked ? 6.0 : this.posLerpSpeed);
     desiredVel.clampLength(0, this.maxSpeed);
 
     // Smooth velocity transition
-    this.velocity.lerp(desiredVel, delta * 6.0);
+    const dampRate = this.isHoverLocked ? 8.0 : 6.0;
+    this.velocity.lerp(desiredVel, delta * dampRate);
     this.position.addScaledVector(this.velocity, delta);
 
-    // 3. Dynamic Banking / Tilt based on velocity & heading
-    // Transform velocity into local drone coordinate system
+    // 4. Dynamic Banking / Tilt based on velocity transformed into local drone coordinate system
     const localVelX = this.velocity.x * Math.cos(-this.yaw) - this.velocity.z * Math.sin(-this.yaw);
     const localVelZ = this.velocity.x * Math.sin(-this.yaw) + this.velocity.z * Math.cos(-this.yaw);
 
@@ -198,6 +222,7 @@ export class FlightController {
       rpm: Math.round(this.drone.rpm),
       mode: this.mode,
       isArmed: this.isArmed,
+      isHoverLocked: this.isHoverLocked,
     };
   }
 }

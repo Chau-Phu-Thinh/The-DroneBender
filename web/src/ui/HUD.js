@@ -116,19 +116,26 @@ export class HUD {
     this.elValRpm.textContent = t.rpm;
 
     // Armed status
-    this.elArmedIndicator.textContent = t.isArmed ? '● Armed' : '○ Disarmed';
+    this.elArmedIndicator.textContent = t.isArmed ? (t.isHoverLocked ? '● HOVER LOCK' : '● Armed') : '○ Disarmed';
 
     // Target coords display
     const tgt = this.fc.targetPosition;
-    this.elTargetCoords.textContent = `TARGET: (${tgt.x.toFixed(1)}, ${tgt.y.toFixed(1)}, ${tgt.z.toFixed(1)})`;
+    this.elTargetCoords.textContent = t.isHoverLocked
+      ? `LOCKED: (${tgt.x.toFixed(1)}, ${tgt.y.toFixed(1)}, ${tgt.z.toFixed(1)})`
+      : `TARGET: (${tgt.x.toFixed(1)}, ${tgt.y.toFixed(1)}, ${tgt.z.toFixed(1)})`;
 
     // Hands status
     if (this.ws.isConnected) {
       if (this.ws.handCount > 0) {
-        this.elValHands.textContent = 'Tracking';
-        this.elValHands.style.color = '#2d5016';
+        if (t.isHoverLocked) {
+          this.elValHands.textContent = '✊ FIST (LOCKED)';
+          this.elValHands.style.color = '#8b1a1a';
+        } else {
+          this.elValHands.textContent = '✋ OPEN (FLYING)';
+          this.elValHands.style.color = '#2d5016';
+        }
       } else {
-        this.elValHands.textContent = 'Waiting…';
+        this.elValHands.textContent = 'Waiting Hand…';
         this.elValHands.style.color = '#6b6b6b';
       }
     }
